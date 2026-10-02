@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChatQ — Real-Time Chat, Media Sharing & WebRTC Calling</title>
+  <meta name="description" content="A modern, high-performance chatting platform supporting rich media sharing, audio voice notes, and P2P WebRTC audio & video calls.">
+  <link rel="stylesheet" href="css/style.css?v=6">
+</head>
+<body>
+
+  <!-- App Main Layout -->
+  <div id="app-container">
+
+    <!-- Left Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <div class="brand-icon">
+            💬
+            <span class="brand-unread-dot hidden" id="brand-unread-dot"></span>
+          </div>
+          <h2>ChatQ</h2>
+          <span class="total-unread-badge hidden" id="total-unread-badge">0</span>
+        </div>
+      </div>
+
+      <!-- Current User Profile Card with Logout -->
+      <div class="current-user-badge">
+        <div class="avatar-wrap">
+          <img id="my-avatar-img" src="https://api.dicebear.com/7.x/bottts/svg?seed=Me" alt="My Avatar" />
+          <span class="status-dot online"></span>
+        </div>
+        <div class="user-meta">
+          <div class="user-name" id="my-username">Connecting...</div>
+          <div class="user-email-text" id="my-email">online</div>
+        </div>
+        <button class="btn-logout" id="btn-logout" title="Sign Out">
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Search users -->
+      <div class="sidebar-search">
+        <div class="search-input-wrap">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input type="text" id="search-users" class="search-input" placeholder="Search contacts or users..." autocomplete="off" />
+        </div>
+      </div>
+
+      <!-- Channels & Contacts Scroll Area -->
+      <div class="sidebar-section">
+        <div class="channel-item active" id="channel-general">
+          <div class="channel-icon">
+            #
+            <span class="channel-unread-dot hidden" id="channel-unread-dot"></span>
+          </div>
+          <span style="flex: 1;">General Channel</span>
+          <span class="unread-badge hidden" id="unread-badge-general">0</span>
+        </div>
+
+        <!-- Contacts Header with Add Button -->
+        <div class="section-header-row" style="margin-top: 1rem;">
+          <div class="section-heading">Contacts</div>
+          <button class="btn-add-contact" id="btn-open-add-contact" title="Add new contact">
+            <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+            </svg>
+            Add
+          </button>
+        </div>
+
+        <!-- Requests Toggle Bar (Shows when pending requests exist) -->
+        <div class="requests-toggle-bar" id="requests-toggle-bar" style="display: none;">
+          <span>📬 Pending Requests</span>
+          <span class="requests-badge" id="requests-badge">0</span>
+        </div>
+
+        <!-- Pending Requests List (Expandable) -->
+        <div class="pending-requests-container" id="pending-requests-container">
+          <!-- Populated dynamically -->
+        </div>
+
+        <!-- Accepted Contacts List -->
+        <div id="direct-messages-list">
+          <!-- Dynamically populated with authorized contacts -->
+        </div>
+
+        <!-- Discover & Add Users (shown when searching in sidebar) -->
+        <div id="sidebar-discover-section" style="display: none; margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+          <div class="section-heading" style="color: var(--primary-light); margin-bottom: 0.5rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px;">Global Users Found</div>
+          <div id="sidebar-discover-list"></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Chat Workspace -->
+    <main class="chat-area">
+      <!-- Chat Header -->
+      <header class="chat-header">
+        <div class="chat-target-info">
+          <div class="avatar-wrap" style="width: 44px; height: 44px;">
+            <img id="chat-target-avatar" src="https://api.dicebear.com/7.x/identicon/svg?seed=General" alt="Target Avatar" />
+          </div>
+          <div>
+            <div class="chat-target-name" id="chat-target-name"># General Channel</div>
+            <div class="chat-target-status" id="chat-target-status">
+              <span class="pulse-indicator"></span> Public group channel
+            </div>
+          </div>
+        </div>
+
+        <!-- Call Actions (Visible during 1-to-1 chats) -->
+        <div class="chat-actions">
+          <button id="btn-call-audio" class="action-btn call-btn-audio" title="Start Audio Call" style="display: none;">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+            </svg>
+          </button>
+          <button id="btn-call-video" class="action-btn call-btn-video" title="Start Video Call" style="display: none;">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Blocked / Non-Contact Alert Banner -->
+      <div class="blocked-interaction-banner hidden" id="blocked-interaction-banner">
+        <span id="blocked-banner-text">⚠️ You and this user are not connected contacts.</span>
+        <button class="btn-send-req" id="btn-banner-add-contact">➕ Send Contact Request</button>
+      </div>
+
+      <!-- Messages Stream -->
+      <section class="messages-container" id="messages-feed">
+        <div class="system-message">
+          Welcome to ChatQ! You are in the #General channel. Direct message anyone from the sidebar to start a real-time WebRTC audio or video call.
+        </div>
+      </section>
+
+      <!-- Typing Indicator -->
+      <div class="typing-indicator-bar" id="typing-indicator"></div>
+
+      <!-- Attachment Preview Bar (Shown when a file is selected) -->
+      <div class="attachment-preview-bar" id="attachment-preview-bar">
+        <img id="preview-thumbnail" class="preview-thumbnail" alt="Preview" style="display: none;" />
+        <div class="preview-info">
+          <div class="preview-name" id="preview-name">file.png</div>
+          <div class="preview-size" id="preview-size">1.2 MB</div>
+        </div>
+        <button id="btn-remove-attachment" class="btn-remove-preview" title="Remove attachment">&times;</button>
+      </div>
+
+      <!-- Message Input Bar -->
+      <footer class="chat-footer">
+        <input type="file" id="file-input" style="display: none;" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt,.zip" />
+        
+        <button id="btn-attach" class="input-tool-btn" title="Attach image, video or document">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+          </svg>
+        </button>
+
+        <button id="btn-record" class="input-tool-btn btn-record" title="Record Voice Note">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+          </svg>
+        </button>
+
+        <div class="chat-input-box">
+          <input type="text" id="chat-input" class="chat-input" placeholder="Type a message or share a link..." autocomplete="off" />
+        </div>
+
+        <button id="btn-send" class="btn-send" title="Send message">
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+          </svg>
+        </button>
+      </footer>
+    </main>
+
+  </div>
+
+  <!-- ================= AUTHENTICATION MODAL ================= -->
+  <div class="modal-overlay" id="login-modal">
+    <div class="login-card">
+      <div class="brand-badge">
+        <div class="brand-icon">💬</div>
+        <h1 class="brand-title">ChatQ</h1>
+      </div>
+      <p class="login-subtitle">Secure Messaging & Encrypted WebRTC Calling</p>
+
+      <!-- 1-Click Demo Accounts -->
+      <div class="demo-logins-box">
+        <div class="demo-box-header">
+          <span class="demo-box-title">⚡ Quick 1-Click Demo Access</span>
+          <span class="demo-badge">Instant</span>
+        </div>
+        <div class="demo-pills">
+          <div class="demo-pill" id="demo-alice">
+            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Alice" alt="Alice" />
+            <span>Alice</span>
+          </div>
+          <div class="demo-pill" id="demo-bob">
+            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Bob" alt="Bob" />
+            <span>Bob</span>
+          </div>
+          <div class="demo-pill" id="demo-charlie">
+            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Charlie" alt="Charlie" />
+            <span>Charlie</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Clerk Auth Integration Button -->
+      <div class="clerk-btn-wrap" id="clerk-btn-wrap">
+        <button class="btn-clerk" id="btn-clerk-auth">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M11.5 2C6.253 2 2 6.253 2 11.5S6.253 21 11.5 21 21 16.747 21 11.5 16.747 2 11.5 2zm3.36 12.72l-1.92 1.92a1.2 1.2 0 01-1.7 0l-4.24-4.24a1.2 1.2 0 010-1.7l1.92-1.92a1.2 1.2 0 011.7 0l1.4 1.4 3.14-3.14a1.2 1.2 0 011.7 0l1.92 1.92a1.2 1.2 0 010 1.7l-4.02 4.06h.1z" fill="currentColor"/>
+          </svg>
+          <span id="clerk-btn-label">Continue with Clerk</span>
+        </button>
+      </div>
+
+      <div class="auth-divider">or sign in with email</div>
+
+      <!-- Auth Tabs: Sign In / Create Account -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login">Sign In</button>
+        <button class="auth-tab" id="tab-register">Create Account</button>
+      </div>
+
+      <!-- Error alert -->
+      <div class="auth-error-msg" id="auth-error-msg"></div>
+
+      <!-- Auth Form -->
+      <form id="auth-form">
+        <!-- Avatar picker (Register only) -->
+        <div id="register-avatar-group" style="display: none;">
+          <label class="input-label" style="text-align: center;">Choose Avatar</label>
+          <div class="avatar-selector">
+            <div class="avatar-option selected" data-avatar="https://api.dicebear.com/7.x/bottts/svg?seed=Alex">
+              <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Alex" alt="Avatar 1" />
+            </div>
+            <div class="avatar-option" data-avatar="https://api.dicebear.com/7.x/bottts/svg?seed=Sarah">
+              <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Sarah" alt="Avatar 2" />
+            </div>
+            <div class="avatar-option" data-avatar="https://api.dicebear.com/7.x/bottts/svg?seed=Jordan">
+              <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Jordan" alt="Avatar 3" />
+            </div>
+            <div class="avatar-option" data-avatar="https://api.dicebear.com/7.x/bottts/svg?seed=Maya">
+              <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Maya" alt="Avatar 4" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Handle input (Register only) -->
+        <div class="input-group" id="group-username" style="display: none;">
+          <label class="input-label" for="username-input">Handle / Username</label>
+          <input type="text" id="username-input" class="text-input" placeholder="e.g. Alex, Sam, DevMaster" autocomplete="username" />
+        </div>
+
+        <!-- Email input -->
+        <div class="input-group">
+          <label class="input-label" for="email-input">Email or Username</label>
+          <input type="text" id="email-input" class="text-input" placeholder="name@example.com" required autocomplete="email" />
+        </div>
+
+        <!-- Password input -->
+        <div class="input-group">
+          <label class="input-label" for="password-input">Password</label>
+          <input type="password" id="password-input" class="text-input" placeholder="••••••••" required autocomplete="current-password" />
+        </div>
+
+        <button type="submit" class="btn-primary" id="btn-submit-auth">
+          <span id="submit-btn-text">Sign In</span>
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. Incoming Call Dialog -->
+  <div class="incoming-call-modal hidden" id="incoming-call-modal">
+    <div class="incoming-caller-avatar">
+      <div class="ring-pulse-ring"></div>
+      <img id="incoming-caller-avatar-img" src="" alt="Caller" />
+    </div>
+    <div class="incoming-call-info">
+      <span class="incoming-caller-name" id="incoming-caller-name">User</span>
+      <span class="incoming-call-type" id="incoming-call-type">Incoming Call...</span>
+    </div>
+    <div class="call-btn-group">
+      <button class="btn-call-accept" id="btn-accept-call" title="Accept Call">
+        <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+        </svg>
+      </button>
+      <button class="btn-call-decline" id="btn-decline-call" title="Decline Call">
+        <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- 3. Active Call Fullscreen Overlay -->
+  <div class="call-overlay hidden" id="call-overlay">
+    <div class="call-top-bar">
+      <div class="call-peer-badge">
+        <img class="call-peer-avatar" id="call-peer-avatar" src="" alt="Peer" />
+        <span class="call-peer-title" id="call-peer-title">Connected</span>
+      </div>
+      <div class="call-timer-pill" id="call-duration">00:00</div>
+    </div>
+
+    <div class="video-stage">
+      <video id="remote-video" autoplay playsinline></video>
+
+      <div class="audio-call-stage" id="audio-call-stage" style="display: none;">
+        <div class="audio-stage-avatar">
+          <div class="pulse-circle"></div>
+          <img id="audio-stage-avatar-img" src="" alt="Audio Peer" />
+        </div>
+        <canvas class="audio-visualizer-canvas" id="audio-visualizer" width="260" height="48"></canvas>
+      </div>
+
+      <div class="local-video-pip" id="local-video-pip">
+        <video id="local-video" autoplay playsinline muted></video>
+      </div>
+    </div>
+
+    <div class="call-controls">
+      <button class="call-ctrl-btn" id="btn-mute" title="Mute/Unmute Microphone">
+        <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+        </svg>
+      </button>
+
+      <button class="call-ctrl-btn" id="btn-video-toggle" title="Turn Camera On/Off">
+        <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+      </button>
+
+      <button class="call-ctrl-btn" id="btn-screen-share" title="Share Screen">
+        <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+      </button>
+
+      <button class="call-ctrl-btn btn-end-call" id="btn-end-call" title="End Call">
+        <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M5 3a2 2 0 00-2 2v1c0 8.284 6.716 15 15 15h1a2 2 0 002-2v-3.28a1 1 0 00-.684-.948l-4.493-1.498a1 1 0 00-1.21.502l-1.13 2.257a11.042 11.042 0 01-5.516-5.517l2.257-1.128a1 1 0 00.502-1.21L9.228 3.683A1 1 0 008.279 3H5z" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- 4. Image Lightbox Modal -->
+  <div class="lightbox-modal hidden" id="lightbox-modal">
+    <button class="lightbox-close" id="lightbox-close">&times;</button>
+    <img id="lightbox-img" class="lightbox-img" src="" alt="Enlarged view" />
+  </div>
+
+  <!-- 5. Add Contact / User Modal -->
+  <div class="modal-overlay hidden" id="modal-add-contact">
+    <div class="modal-add-contact-card">
+      <div class="modal-header-row">
+        <h2 class="modal-title">Add New Contact</h2>
+        <button class="btn-close-modal" id="btn-close-add-modal">&times;</button>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.2rem;">
+        Search registered users by their handle or email address to send a contact request.
+      </p>
+
+      <div class="modal-search-row" style="display: flex; gap: 8px; margin-bottom: 1.2rem;">
+        <div class="search-input-wrap" style="flex: 1; margin-bottom: 0;">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input type="text" id="input-search-users" class="search-input" placeholder="Search by username or email (e.g. Abhishek, bugopsx)..." autocomplete="off" />
+        </div>
+        <button id="btn-submit-user-search" class="btn-primary" style="padding: 0 1.25rem; font-weight: 600; border-radius: var(--radius-md); display: flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap;">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          Search
+        </button>
+      </div>
+
+      <div class="search-results-list" id="search-results-list">
+        <!-- Results rendered here dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/audio-effects.js?v=6"></script>
+  <script src="js/webrtc.js?v=6"></script>
+  <script src="js/socket.js?v=6"></script>
+  <script src="js/app.js?v=6"></script>
+
+</body>
+</html>
